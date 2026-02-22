@@ -237,47 +237,54 @@ export default function VatCheckerClient() {
   }, [rows]);
 
   return (
-    <section className="container mx-auto py-10 px-4 md:px-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">VAT checker</h1>
-          <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-            API:{" "}
-            <Badge kind={health?.ok ? "ok" : "err"}>{health?.ok ? "up" : "down"}</Badge>
-            {health?.mode ? <span className="ml-2 opacity-80">mode: {health.mode}</span> : null}
-          </div>
-        </div>
+<section className="my-16 mx-4 sm:mx-8 md:mx-16 lg:mx-24">
+  <div className="text-center">
+    <h1 className="font-sans text-3xl tracking-tighter sm:text-5xl md:text-6xl dark:text-white mb-4">
+      VAT checker
+    </h1>
+    <p className="text-lg text-gray-600 dark:text-gray-300 font-light">
+      Check EU VAT numbers (VIES) en exporteer naar CSV/JSON.
+    </p>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <input
-              type="checkbox"
-              checked={poll}
-              onChange={(e) => setPoll(e.target.checked)}
-              className="h-4 w-4"
-            />
-            poll
-          </label>
+    <div className="mt-4 flex justify-center items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+      <span>API:</span>
+      <Badge kind={health?.ok ? "ok" : "err"}>{health?.ok ? "up" : "down"}</Badge>
+      {health?.mode ? <span className="ml-2 opacity-80">mode: {health.mode}</span> : null}
+    </div>
+  </div>
 
-          <button
-            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50"
-            onClick={refreshQueue}
-            disabled={busy}
-          >
-            refresh
-          </button>
+  <div className="mt-6 flex flex-wrap justify-center items-center gap-2">
+    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+      <input
+        type="checkbox"
+        checked={poll}
+        onChange={(e) => setPoll(e.target.checked)}
+        className="h-4 w-4"
+      />
+      poll
+    </label>
 
-          <button
-            className="rounded-md border border-red-500/40 px-3 py-2 text-sm text-red-700 hover:bg-red-500/10 dark:text-red-200 disabled:opacity-50"
-            onClick={clearQueue}
-            disabled={busy}
-          >
-            clear queue
-          </button>
-        </div>
-      </div>
+    <button
+      className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50"
+      onClick={() => {
+        void refreshHealth();
+        void refreshQueue();
+      }}
+      disabled={busy}
+    >
+      refresh
+    </button>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <button
+      className="rounded-md border border-red-500/40 px-3 py-2 text-sm text-red-700 hover:bg-red-500/10 dark:text-red-200 disabled:opacity-50"
+      onClick={clearQueue}
+      disabled={busy}
+    >
+      clear queue
+    </button>
+  </div>
+
+  <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Input */}
         <div className="rounded-2xl border bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-black">
           <div className="flex items-center justify-between gap-3">
