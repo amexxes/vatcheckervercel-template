@@ -285,7 +285,13 @@ async function processQueue() {
     >
       refresh
     </button>
-
+<button
+  className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50"
+  onClick={processQueue}
+  disabled={busy}
+>
+  process queue
+</button>
     <button
       className="rounded-md border border-red-500/40 px-3 py-2 text-sm text-red-700 hover:bg-red-500/10 dark:text-red-200 disabled:opacity-50"
       onClick={clearQueue}
