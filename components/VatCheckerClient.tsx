@@ -229,7 +229,7 @@ async function processQueue() {
   setBusy(true);
   setError(null);
   try {
-    await apiGet("/api/worker?max=5");
+    await apiPost("/api/worker", { max: 5 });
     await refreshQueue();
   } catch (e: any) {
     setError(e?.message ?? String(e));
