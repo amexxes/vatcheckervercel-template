@@ -1,5 +1,7 @@
-const VIES_URL =
-  "https://ec.europa.eu/taxation_customs/vies/services/checkVatService";
+export type ViesResponse = { valid: boolean | null; name: string; address: string };
+
+const VIES_ENDPOINT =
+  "https://ec.europa.eu/taxation_customs/vies/services/checkVatService"; // SOAP endpoint :contentReference[oaicite:1]{index=1}
 
 function decodeXml(s: string) {
   return s
@@ -19,12 +21,12 @@ function pickTag(xml: string, tag: string): string | null {
   return m ? decodeXml(m[1].trim()) : null;
 }
 
-export async function checkVatVies(countryCode: string, vatNumber: string) {
-  // VIES gebruikt EL voor Griekenland (i.p.v. GR)
+export async function checkVatVies(countryCode: string, vatNumber: string): Promise<ViesResponse> {
+  // VIES gebruikt EL voor Griekenland
   const cc = (countryCode ?? "").toUpperCase() === "GR" ? "EL" : (countryCode ?? "").toUpperCase();
   const vn = String(vatNumber ?? "").replace(/\s+/g, "");
 
-  const body = `<?xml version="1.0" encoding="UTF-8"?>
+  const soapBody = `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
                   xmlns:urn="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
   <soapenv:Header/>
@@ -36,18 +38,20 @@ export async function checkVatVies(countryCode: string, vatNumber: string) {
   </soapenv:Body>
 </soapenv:Envelope>`;
 
-  const r = await fetch(VIES_URL, {
+  const r = await fetch(VIES_ENDPOINT, {
     method: "POST",
     headers: {
       "content-type": "text/xml; charset=utf-8",
+      SOAPAction: "",
       "cache-control": "no-store",
+      "user-agent": "vat-checker/1.0",
     },
-    body,
+    body: soapBody,
+    cache: "no-store",
   });
 
   const text = await r.text();
 
-  // SOAP fault?
   const fault = pickTag(text, "faultstring");
   if (!r.ok) throw new Error(`VIES ${r.status} ${r.statusText}`);
   if (fault) throw new Error(fault);
