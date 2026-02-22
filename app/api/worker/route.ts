@@ -36,20 +36,7 @@ function withUpdate(base: VatRow, patch: Partial<VatRow>): VatRow {
   return { ...base, ...patch, ts_updated: Date.now() };
 }
 
-function mockValidate(countryCode: string, vatPart: string) {
-  // simpele mock: “valid” als laatste teken een even cijfer is
-  const last = vatPart.slice(-1);
-  const n = Number(last);
-  const valid = Number.isFinite(n) ? n % 2 === 0 : null;
-  return { valid, name: "", address: "", note: `${countryCode}-${vatPart}` };
-}
-
-export async function GET(req: Request) {
-  const started = Date.now();
-  const url = new URL(req.url);
-  const max = Math.min(Number(url.searchParams.get("max") ?? 5), 10);
-  const mode = (process.env.MODE ?? "vies").toLowerCase(); // vies | mock
-
+async function runWorker(max: number) {
   const items = await popQueueBatch(max);
   const results: VatRow[] = [];
 
@@ -64,40 +51,35 @@ export async function GET(req: Request) {
     }
 
     try {
-      if (mode === "mock") {
-        const v = mockValidate(countryCode, vatPart);
-        results.push(
-          withUpdate(row, { state: "done", valid: v.valid, name: "", address: "", error: "", source: "mock" })
-        );
-      } else {
-        const v = await checkVatVies(countryCode, vatPart);
-        results.push(
-          withUpdate(row, {
-            state: "done",
-            valid: v.valid,
-            name: v.name,
-            address: v.address,
-            error: "",
-            source: "vies",
-          })
-        );
-      }
+      const v = await checkVatVies(countryCode, vatPart);
+      results.push(
+        withUpdate(row, { state: "done", valid: v.valid, name: v.name, address: v.address, error: "", source: "vies" })
+      );
     } catch (e: any) {
       results.push(withUpdate(row, { state: "error", valid: null, error: e?.message ?? String(e), source: "vies" }));
     }
   }
 
   if (results.length) await pushVatResults(results);
-
   const queue_len = await kv.llen(VAT_QUEUE_KEY);
-  const res = NextResponse.json({
-    ok: true,
-    mode,
-    processed: results.length,
-    queue_len,
-    ms: Date.now() - started,
-    results,
-  });
+
+  return { processed: results.length, queue_len, results };
+}
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const max = Math.min(Number(url.searchParams.get("max") ?? 5), 10);
+  const data = await runWorker(max);
+  const res = NextResponse.json({ ok: true, ...data });
+  res.headers.set("Cache-Control", "no-store");
+  return res;
+}
+
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => ({}));
+  const max = Math.min(Number(body?.max ?? 5), 10);
+  const data = await runWorker(max);
+  const res = NextResponse.json({ ok: true, ...data });
   res.headers.set("Cache-Control", "no-store");
   return res;
 }
