@@ -225,7 +225,18 @@ export default function VatCheckerClient() {
       setBusy(false);
     }
   }
-
+async function processQueue() {
+  setBusy(true);
+  setError(null);
+  try {
+    await apiGet("/api/worker?max=5");
+    await refreshQueue();
+  } catch (e: any) {
+    setError(e?.message ?? String(e));
+  } finally {
+    setBusy(false);
+  }
+}
   const stats = useMemo(() => {
     const total = rows.length;
     const valid = rows.filter((r) => r.valid === true).length;
